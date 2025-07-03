@@ -1,5 +1,5 @@
 
-CREATE DATABASE sqldb-seduc;
+CREATE DATABASE sqldb_seduc;
 
 CREATE TABLE aluno(
    matricula int NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE aluno(
 
    CONSTRAINT aluno_PK PRIMARY KEY (matricula),
    CONSTRAINT aluno_FK FOREIGN KEY (id_escola)
-   )ON sqldb-seduc;
+   )ON sqldb_seduc;
 
 CREATE TABLE escola(
    id_escola int NOT NULL,
@@ -20,14 +20,14 @@ CREATE TABLE escola(
    cidade nvarchar(50) NOT NULL
 
    CONSTRAINT escola_PK PRIMARY KEY (id_escola)
-   )ON sqldb-seduc;
+   )ON sqldb_seduc;
 
 CREATE TABLE disciplina(
    id_disciplina int NOT NULL,
    nome nvarchar(50) NOT NULL,
 
    CONSTRAINT disciplina_PK PRIMARY KEY (id_disciplina)
-   )ON sqldb-seduc;
+   )ON sqldb_seduc;
 
 CREATE TABLE matricula(
    id int NOT NULL,
@@ -40,4 +40,4 @@ CREATE TABLE matricula(
    status boolean NOT NULL,
 
    CONSTRAINT mat_PK PRIMARY KEY (id)
-   )ON sqldb-seduc;
+   )ON sqldb_seduc;

@@ -1,0 +1,49 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: seduc_postgres
+    environment:
+      POSTGRES_DB: sqldb-seduc
+      POSTGRES_USER: master
+      POSTGRES_PASSWORD: HgAXVS5uWph3
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U master -d sqldb-seduc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - seduc_network
+
+  # SEDUC API
+  api:
+    build: .
+    container_name: seduc_api
+    environment:
+      DATABASE_URL: postgresql://master:HgAXVS5uWph3@postgres:5432/sqldb-seduc
+      SECRET_KEY: your-super-secret-key-change-in-production
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./api:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - seduc_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  seduc_network:
+    driver: bridge 

@@ -14,17 +14,8 @@ class DevelopmentConfig(Config):
         'postgresql://master:HgAXVS5uWph3@localhost/sqldb-seduc'
     )
 
-class ProductionConfig(Config):
-    DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
-
-class TestingConfig(Config):
-    TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
 
 config = {
     'development': DevelopmentConfig,
-    'production': ProductionConfig,
-    'testing': TestingConfig,
     'default': DevelopmentConfig
 } 

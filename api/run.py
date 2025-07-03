@@ -7,10 +7,8 @@ import os
 
 # Add the parent directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from api.app import create_app
-
-app = create_app()
+from app.app import create_app
+flask_app = create_app()
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    flask_app.run(debug=True, host='0.0.0.0', port=5000) 

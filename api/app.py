@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 import os
@@ -6,9 +6,10 @@ import os
 # Initialize extensions
 db = SQLAlchemy()
 migrate = Migrate()
-
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, 
+                template_folder='templates',
+                static_folder='static')
     
     # Configuration
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
@@ -23,7 +24,8 @@ def create_app():
     migrate.init_app(app, db)
     
     # Register blueprints
-    from .routes import aluno_bp, escola_bp, disciplina_bp, matricula_bp
+    from .routes import aluno_bp, escola_bp, disciplina_bp, matricula_bp, auth_bp
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(aluno_bp, url_prefix='/api/alunos')
     app.register_blueprint(escola_bp, url_prefix='/api/escolas')
     app.register_blueprint(disciplina_bp, url_prefix='/api/disciplinas')
@@ -32,5 +34,22 @@ def create_app():
     @app.route('/health')
     def health_check():
         return {'status': 'healthy', 'message': 'SEDUC API is running'}
+    
+    # Frontend routes
+    @app.route('/')
+    def index():
+        return send_from_directory('templates', 'login.html')
+    
+    @app.route('/login')
+    def login_page():
+        return send_from_directory('templates', 'login.html')
+    
+    @app.route('/register')
+    def register_page():
+        return send_from_directory('templates', 'register.html')
+    
+    @app.route('/dashboard')
+    def dashboard_page():
+        return send_from_directory('templates', 'dashboard.html')
     
     return app 
