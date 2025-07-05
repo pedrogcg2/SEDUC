@@ -12,11 +12,13 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
-    
-    def __init__(self, username, password, email=None):
+    is_admin = db.Column(db.Boolean, default=False)
+
+    def __init__(self, username, password, email=None, is_admin=False):
         self.username = username
         self.set_password(password)
         self.email = email
+        self.is_admin = false
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
