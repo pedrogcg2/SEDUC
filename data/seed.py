@@ -3,7 +3,7 @@ import psycopg2
 from psycopg2.extras import execute_values
 
 # Load CSV
-df = pd.read_csv("dados_simulados_educacao.csv")
+df = pd.read_csv("data/dados_simulados_educacao.csv")
 
 # Clean up and normalize data
 df["Média Anual"] = df["Média Anual"].str.replace(",", ".").astype(float)
@@ -15,7 +15,7 @@ conn = psycopg2.connect(
     dbname="sqldb-seduc",
     user="master",
     password="HgAXVS5uWph3",
-    host="localhost",
+    host="postgres",
     port="5432"
 )
 cur = conn.cursor()

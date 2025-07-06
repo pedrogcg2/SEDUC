@@ -29,13 +29,24 @@ services:
       SECRET_KEY: your-super-secret-key-change-in-production
       FLASK_ENV: development
       FLASK_DEBUG: 1
+      PYTHONPATH: /app
     ports:
       - "5000:5000"
     volumes:
-      - ./api:/app
+      - ./app:/app
+      - ./data:/app/data
     depends_on:
       postgres:
         condition: service_healthy
+    command: >
+      sh -c "
+        echo 'Initializing database...' &&
+        python3 /app/init_db.py &&
+        echo 'Seeding database...' &&
+        python3 /app/data/seed.py &&
+        echo 'Starting Flask app...' &&
+        python3 /app/run.py
+      "
     networks:
       - seduc_network
     restart: unless-stopped
