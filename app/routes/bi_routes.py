@@ -54,39 +54,31 @@ def test():
 
 @bi_bp.route('/schools-performance', methods=['GET'])
 def schools_performance():
-    """Get schools performance data for BI"""
+    """Get schools performance data for BI (média das médias dos alunos)"""
     try:
-        # Query to get average performance by school using subquery to avoid duplicates
         from sqlalchemy import text
-        
         query = text("""
-            WITH school_stats AS (
-                SELECT 
-                    e.id_escola,
-                    e.nome,
-                    e.cidade,
-                    AVG(m.nota) as average_grade,
-                    COUNT(DISTINCT m.matricula_aluno) as total_students,
-                    SUM(CASE WHEN m.status = true THEN 1 ELSE 0 END) as approved_count,
-                    AVG(CASE WHEN m.status = true THEN 1.0 ELSE 0.0 END) * 100 as approval_rate
-                FROM escola e
-                JOIN matricula m ON e.id_escola = m.id_escola
-                GROUP BY e.id_escola, e.nome, e.cidade
-                HAVING COUNT(DISTINCT m.matricula_aluno) > 0
+            WITH aluno_media AS (
+                SELECT
+                    m.id_escola,
+                    m.matricula_aluno,
+                    AVG(m.nota) AS media_aluno,
+                    AVG(CASE WHEN m.status = true THEN 1.0 ELSE 0.0 END) AS taxa_aprovacao_aluno
+                FROM matricula m
+                GROUP BY m.id_escola, m.matricula_aluno
             )
-            SELECT 
-                nome as school_name,
-                cidade as city,
-                average_grade,
-                total_students,
-                approved_count,
-                approval_rate
-            FROM school_stats
+            SELECT
+                e.nome AS school_name,
+                e.cidade AS city,
+                AVG(a.media_aluno) AS average_grade,
+                COUNT(DISTINCT a.matricula_aluno) AS total_students,
+                AVG(a.taxa_aprovacao_aluno) * 100 AS approval_rate
+            FROM escola e
+            JOIN aluno_media a ON e.id_escola = a.id_escola
+            GROUP BY e.id_escola, e.nome, e.cidade
             ORDER BY average_grade DESC
         """)
-        
         schools_data = db.session.execute(query).fetchall()
-        
         result = []
         for school in schools_data:
             result.append({
@@ -94,15 +86,12 @@ def schools_performance():
                 'city': school.city,
                 'average_grade': float(school.average_grade),
                 'total_students': school.total_students,
-                'approved_count': school.approved_count,
-                'approval_rate': float(school.approval_rate * 100)
+                'approval_rate': float(school.approval_rate)
             })
-        
         return jsonify({
             'success': True,
             'data': result
         })
-    
     except Exception as e:
         return jsonify({
             'success': False,
@@ -297,6 +286,66 @@ def debug_schools():
             'enrollments': [{'school': e.school_name, 'total': e.total_enrollments, 'unique': e.unique_students} for e in enrollments]
         })
         
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@bi_bp.route('/kpi/total-alunos', methods=['GET'])
+def kpi_total_alunos():
+    """Retorna o número real de alunos cadastrados (KPI)"""
+    try:
+        total = db.session.query(Aluno).count()
+        return jsonify({'success': True, 'total_alunos': total})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@bi_bp.route('/debug-schools-query', methods=['GET'])
+def debug_schools_query():
+    """Debug endpoint para verificar a query de escolas"""
+    try:
+        from sqlalchemy import text
+        query = text("""
+            WITH aluno_media AS (
+                SELECT
+                    m.id_escola,
+                    m.matricula_aluno,
+                    AVG(m.nota) AS media_aluno,
+                    AVG(CASE WHEN m.status = true THEN 1.0 ELSE 0.0 END) AS taxa_aprovacao_aluno
+                FROM matricula m
+                GROUP BY m.id_escola, m.matricula_aluno
+            )
+            SELECT
+                e.nome AS school_name,
+                e.cidade AS city,
+                AVG(a.media_aluno) AS average_grade,
+                COUNT(DISTINCT a.matricula_aluno) AS total_students,
+                AVG(a.taxa_aprovacao_aluno) * 100 AS approval_rate
+            FROM escola e
+            JOIN aluno_media a ON e.id_escola = a.id_escola
+            GROUP BY e.id_escola, e.nome, e.cidade
+            ORDER BY average_grade DESC
+            LIMIT 3
+        """)
+        schools_data = db.session.execute(query).fetchall()
+        
+        # Debug: mostrar todos os campos retornados
+        debug_result = []
+        for school in schools_data:
+            debug_result.append({
+                'school_name': school.school_name,
+                'city': school.city,
+                'average_grade': float(school.average_grade),
+                'total_students': school.total_students,
+                'approval_rate_raw': school.approval_rate,  # valor bruto
+                'approval_rate_float': float(school.approval_rate) if school.approval_rate is not None else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'debug_data': debug_result
+        })
     except Exception as e:
         return jsonify({
             'success': False,

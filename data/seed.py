@@ -3,8 +3,7 @@ import psycopg2
 from psycopg2.extras import execute_values
 
 # Load CSV with UTF-8 encoding
-df = pd.read_csv("data/dados_simulados_educacao_modificado.csv", encoding='utf-8')
-
+df = pd.read_csv("data/dados_simulados_perturbado_extremo.csv", encoding='utf-8')
 # Clean up and normalize data
 df["Nota 1º Tri"] = df["Nota 1º Tri"].str.replace(",", ".").astype(float)
 df["Nota 2º Tri"] = df["Nota 2º Tri"].str.replace(",", ".").astype(float)
