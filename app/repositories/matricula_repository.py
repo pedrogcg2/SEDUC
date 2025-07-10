@@ -28,7 +28,7 @@ class MatriculaRepository(BaseRepository):
         query = Matricula.query.filter_by(matricula_aluno=matricula_aluno)
         if ano:
             query = query.filter_by(ano=ano)
-        return query.all()
+        return query.all() 
     
     def get_paginated(self, page: int, per_page: int, search: str = '') -> tuple:
         """Get paginated enrollments with search"""

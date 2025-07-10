@@ -38,7 +38,7 @@ class DisciplinaService:
     
     def search_disciplinas_by_name(self, nome: str) -> List[Dict[str, Any]]:
         disciplinas = self.repository.search_by_name(nome)
-        return [disciplina.to_dict() for disciplina in disciplinas]
+        return [disciplina.to_dict() for disciplina in disciplinas] 
     
     def get_disciplinas_paginated(self, page: int, per_page: int, search: str = '') -> tuple:
         """Get disciplines with pagination and search"""

@@ -76,7 +76,7 @@ class MatriculaService:
         matriculas = self.repository.get_by_disciplina(id_disciplina)
         if not matriculas:
             return 0.0
-        return sum(m.nota for m in matriculas) / len(matriculas)
+        return sum(m.nota for m in matriculas) / len(matriculas) 
     
     def get_matriculas_paginated(self, page: int, per_page: int, search: str = '') -> tuple:
         """Get enrollments with pagination and search"""

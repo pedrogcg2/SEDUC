@@ -7,7 +7,7 @@ class DisciplinaRepository(BaseRepository):
         super().__init__(Disciplina)
     
     def search_by_name(self, nome: str) -> List[Disciplina]:
-        return Disciplina.query.filter(Disciplina.nome.ilike(f'%{nome}%')).all()
+        return Disciplina.query.filter(Disciplina.nome.ilike(f'%{nome}%')).all() 
     
     def get_paginated(self, page: int, per_page: int, search: str = '') -> tuple:
         """Get paginated disciplines with optional search"""

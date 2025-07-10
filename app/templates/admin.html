@@ -430,6 +430,17 @@
                 text-align: center;
             }
         }
+        .autocomplete-suggestions {
+            border-radius: 0 0 5px 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .autocomplete-suggestion {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+        }
+        .autocomplete-suggestion:hover, .autocomplete-suggestion.active {
+            background: #f8f9fa;
+        }
     </style>
 </head>
 <body>
@@ -704,6 +715,13 @@
             subjects: [],
             enrollments: []
         };
+        let statsData = {
+            users: 0,
+            schools: 0,
+            students: 0,
+            subjects: 0,
+            enrollments: 0
+        };
         let currentTab = 'users';
         let editingId = null;
         
@@ -782,27 +800,30 @@
                 // Extract total counts from pagination info
                 if (usersRes.ok) {
                     const userData = await usersRes.json();
-                    currentData.users = userData.pagination ? userData.pagination.total : 0;
+                    statsData.users = userData.pagination ? userData.pagination.total : 0;
                 }
                 if (schoolsRes.ok) {
                     const schoolData = await schoolsRes.json();
-                    currentData.schools = schoolData.pagination ? schoolData.pagination.total : 0;
+                    statsData.schools = schoolData.pagination ? schoolData.pagination.total : 0;
                 }
                 if (studentsRes.ok) {
                     const studentData = await studentsRes.json();
-                    currentData.students = studentData.pagination ? studentData.pagination.total : 0;
+                    statsData.students = studentData.pagination ? studentData.pagination.total : 0;
                 }
                 if (subjectsRes.ok) {
                     const subjectData = await subjectsRes.json();
-                    currentData.subjects = subjectData.pagination ? subjectData.pagination.total : 0;
+                    statsData.subjects = subjectData.pagination ? subjectData.pagination.total : 0;
                 }
                 if (enrollmentsRes.ok) {
                     const enrollmentData = await enrollmentsRes.json();
-                    currentData.enrollments = enrollmentData.pagination ? enrollmentData.pagination.total : 0;
+                    statsData.enrollments = enrollmentData.pagination ? enrollmentData.pagination.total : 0;
                 }
 
                 // Load initial data for current tab
                 await loadTabData(currentTab);
+
+                // Update the stats on the UI after statsData is updated
+                loadStats();
             } catch (error) {
                 console.error('Failed to load data:', error);
                 showAlert('Erro ao carregar dados', 'error');
@@ -812,11 +833,11 @@
         async function loadStats() {
             try {
                 const stats = {
-                    users: currentData.users || 0,
-                    schools: currentData.schools || 0,
-                    students: currentData.students || 0,
-                    subjects: currentData.subjects || 0,
-                    enrollments: currentData.enrollments || 0
+                    users: statsData.users || 0,
+                    schools: statsData.schools || 0,
+                    students: statsData.students || 0,
+                    subjects: statsData.subjects || 0,
+                    enrollments: statsData.enrollments || 0
                 };
 
                 document.getElementById('totalUsers').textContent = stats.users;
@@ -1344,14 +1365,11 @@
                             <label for="ano">Ano:</label>
                             <input type="number" name="ano" min="2020" max="2030" required>
                         </div>
-                        <div class="form-group">
-                            <label for="matricula_aluno">Aluno:</label>
-                            <select name="matricula_aluno" required>
-                                <option value="">Selecione um aluno</option>
-                                ${currentData.allStudents ? currentData.allStudents.map(student => 
-                                    `<option value="${student.matricula}">${student.nome} (${student.matricula})</option>`
-                                ).join('') : '<option value="">Carregando alunos...</option>'}
-                            </select>
+                        <div class="form-group" style="position:relative;">
+                            <label for="studentAutocompleteInput">Aluno:</label>
+                            <input type="text" id="studentAutocompleteInput" name="student_search" placeholder="Digite o nome ou matrícula do aluno..." autocomplete="off" required oninput="handleStudentAutocompleteInput(event)">
+                            <input type="hidden" name="matricula_aluno" id="studentMatriculaHidden">
+                            <div id="studentAutocompleteSuggestions" class="autocomplete-suggestions" style="position:absolute;top:100%;left:0;width:100%;z-index:10;background:white;border:1px solid #ddd;max-height:180px;overflow-y:auto;display:none;"></div>
                         </div>
                         <div class="form-group">
                             <label for="id_escola">Escola:</label>
@@ -1535,6 +1553,74 @@
                 console.error('Token verification failed:', error);
             }
         }, 300000); // Check every 5 minutes
+
+        // --- Student Autocomplete for Enrollment Modal ---
+        let studentAutocompleteTimeout = null;
+        let lastStudentQuery = '';
+        async function handleStudentAutocompleteInput(event) {
+            const input = event.target;
+            const value = input.value.trim();
+            const suggestionsDiv = document.getElementById('studentAutocompleteSuggestions');
+            const hiddenMatricula = document.getElementById('studentMatriculaHidden');
+            hiddenMatricula.value = '';
+            if (value.length < 2) {
+                suggestionsDiv.style.display = 'none';
+                suggestionsDiv.innerHTML = '';
+                return;
+            }
+            if (studentAutocompleteTimeout) clearTimeout(studentAutocompleteTimeout);
+            studentAutocompleteTimeout = setTimeout(async () => {
+                // Only search if query changed
+                if (value === lastStudentQuery) return;
+                lastStudentQuery = value;
+                suggestionsDiv.innerHTML = '<div class="autocomplete-suggestion">Buscando...</div>';
+                suggestionsDiv.style.display = 'block';
+                try {
+                    const res = await fetch(`/api/alunos?search=${encodeURIComponent(value)}&page=1&per_page=10`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) throw new Error('Erro ao buscar alunos');
+                    const data = await res.json();
+                    const students = data.students || [];
+                    if (students.length === 0) {
+                        suggestionsDiv.innerHTML = '<div class="autocomplete-suggestion">Nenhum aluno encontrado</div>';
+                        return;
+                    }
+                    suggestionsDiv.innerHTML = students.map(student =>
+                        `<div class="autocomplete-suggestion" data-matricula="${student.matricula}" data-nome="${student.nome}">${student.nome} (${student.matricula})</div>`
+                    ).join('');
+                    // Add click listeners
+                    Array.from(suggestionsDiv.children).forEach(child => {
+                        child.onclick = function() {
+                            input.value = `${this.dataset.nome} (${this.dataset.matricula})`;
+                            hiddenMatricula.value = this.dataset.matricula;
+                            suggestionsDiv.style.display = 'none';
+                        };
+                    });
+                } catch (err) {
+                    suggestionsDiv.innerHTML = '<div class="autocomplete-suggestion">Erro ao buscar alunos</div>';
+                }
+            }, 300); // debounce
+        }
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            const suggestionsDiv = document.getElementById('studentAutocompleteSuggestions');
+            const input = document.getElementById('studentAutocompleteInput');
+            if (!suggestionsDiv || !input) return;
+            if (!suggestionsDiv.contains(e.target) && e.target !== input) {
+                suggestionsDiv.style.display = 'none';
+            }
+        });
+        // On form submit, ensure a student was selected
+        document.getElementById('dataForm').addEventListener('submit', function(e) {
+            if (currentTab === 'enrollments') {
+                const hiddenMatricula = document.getElementById('studentMatriculaHidden');
+                if (!hiddenMatricula.value) {
+                    showAlert('Selecione um aluno válido para a matrícula.', 'error');
+                    e.preventDefault();
+                }
+            }
+        });
 
 
     </script>
