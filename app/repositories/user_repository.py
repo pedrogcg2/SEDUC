@@ -52,3 +52,20 @@ class UserRepository(BaseRepository):
     
     def find_by_id(self, user_id):
         return self.model.query.get(user_id)
+    
+    def get_paginated(self, page, per_page, search=''):
+        """Get paginated users with optional search"""
+        query = self.model.query
+        
+        if search:
+            query = query.filter(
+                (self.model.username.ilike(f'%{search}%')) |
+                (self.model.email.ilike(f'%{search}%'))
+            )
+        
+        total = query.count()
+        total_pages = (total + per_page - 1) // per_page
+        
+        users = query.offset((page - 1) * per_page).limit(per_page).all()
+        
+        return users, total, total_pages

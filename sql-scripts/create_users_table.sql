@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(120) UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_active BOOLEAN DEFAULT TRUE
+    is_active BOOLEAN DEFAULT TRUE,
+    is_admin BOOLEAN DEFAULT FALSE
 );
 
 -- Create index on username for faster lookups
@@ -31,10 +32,11 @@ CREATE TRIGGER update_users_updated_at
 
 -- Insert a default admin user (password: admin123)
 -- Note: In production, you should change this password
-INSERT INTO users (username, password_hash, email, is_active) 
+INSERT INTO users (username, password_hash, email, is_active, is_admin) 
 VALUES (
     'admin', 
     'pbkdf2:sha256:600000$your_salt_here$your_hash_here', 
     'admin@seduc.com', 
+    true,
     true
 ) ON CONFLICT (username) DO NOTHING; 

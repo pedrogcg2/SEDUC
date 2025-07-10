@@ -14,8 +14,26 @@ def get_users(current_user=None):
         if not current_user.is_admin:
             return jsonify({'message': 'Access denied. Admin privileges required.'}), 403
         
-        users = user_service.get_all_users()
-        return jsonify(users), 200
+        # Get pagination parameters
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        search = request.args.get('search', '')
+        
+        # Ensure reasonable limits
+        page = max(1, page)
+        per_page = min(max(1, per_page), 100)  # Between 1 and 100
+        
+        users, total, total_pages = user_service.get_users_paginated(page, per_page, search)
+        
+        return jsonify({
+            'users': users,
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total': total,
+                'total_pages': total_pages
+            }
+        }), 200
     except Exception as e:
         return jsonify({'message': str(e)}), 500
 

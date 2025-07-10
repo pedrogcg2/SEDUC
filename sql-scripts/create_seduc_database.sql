@@ -1,43 +1,40 @@
 
 CREATE DATABASE sqldb_seduc;
 
-CREATE TABLE aluno(
-   matricula int NOT NULL,
-   nome nvarchar(100) NOT NULL,
-   data_mat date NOT NULL,
-   turno nvarchar(10) NOT NULL,
-   serie smallint NOT NULL,
-   id_escola smallint NOT NULL,
-
-   CONSTRAINT aluno_PK PRIMARY KEY (matricula),
-   CONSTRAINT aluno_FK FOREIGN KEY (id_escola)
-   )ON sqldb_seduc;
+\c sqldb_seduc;
 
 CREATE TABLE escola(
-   id_escola int NOT NULL,
-   nome nvarchar(100) NOT NULL,
-   endereco nvarchar(100) NOT NULL,
-   cidade nvarchar(50) NOT NULL
+   id_escola SERIAL PRIMARY KEY,
+   nome VARCHAR(100) NOT NULL,
+   endereco VARCHAR(100) NOT NULL,
+   cidade VARCHAR(50) NOT NULL
+);
 
-   CONSTRAINT escola_PK PRIMARY KEY (id_escola)
-   )ON sqldb_seduc;
+CREATE TABLE aluno(
+   matricula SERIAL PRIMARY KEY,
+   nome VARCHAR(100) NOT NULL,
+   data_mat DATE NOT NULL,
+   turno VARCHAR(10) NOT NULL,
+   serie SMALLINT NOT NULL,
+   id_escola SMALLINT NOT NULL,
+   CONSTRAINT aluno_FK FOREIGN KEY (id_escola) REFERENCES escola(id_escola)
+);
 
 CREATE TABLE disciplina(
-   id_disciplina int NOT NULL,
-   nome nvarchar(50) NOT NULL,
-
-   CONSTRAINT disciplina_PK PRIMARY KEY (id_disciplina)
-   )ON sqldb_seduc;
+   id_disciplina SERIAL PRIMARY KEY,
+   nome VARCHAR(50) NOT NULL
+);
 
 CREATE TABLE matricula(
-   id int NOT NULL,
-   ano int NOT NULL,
-   matricula_aluno int NOT NULL,
-   id_escola int NOT NULL,
-   id_disciplina int NOT NULL,
-   serie smallint NOT NULL,
-   nota float NOTNULL,
-   status boolean NOT NULL,
-
-   CONSTRAINT mat_PK PRIMARY KEY (id)
-   )ON sqldb_seduc;
+   id SERIAL PRIMARY KEY,
+   ano INT NOT NULL,
+   matricula_aluno INT NOT NULL,
+   id_escola INT NOT NULL,
+   id_disciplina INT NOT NULL,
+   serie SMALLINT NOT NULL,
+   nota FLOAT NOT NULL,
+   status BOOLEAN NOT NULL,
+   CONSTRAINT matricula_aluno_FK FOREIGN KEY (matricula_aluno) REFERENCES aluno(matricula),
+   CONSTRAINT matricula_escola_FK FOREIGN KEY (id_escola) REFERENCES escola(id_escola),
+   CONSTRAINT matricula_disciplina_FK FOREIGN KEY (id_disciplina) REFERENCES disciplina(id_disciplina)
+);

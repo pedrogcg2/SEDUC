@@ -76,18 +76,20 @@ for _, row in df.iterrows():
 
     if row["matricula_aluno"] not in aluno_ids:
         cur.execute("""
-            INSERT INTO aluno (matricula, nome, data_mat, turno, serie, id_escola)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO aluno (nome, data_mat, turno, serie, id_escola)
+            VALUES (%s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
+            RETURNING matricula
         """, (
-            row["matricula_aluno"],
             row["Aluno"],
             data_mat,
             row["Turno"],
             int(row["Série"]),
             escola_id
         ))
-        aluno_ids[row["matricula_aluno"]] = row["matricula_aluno"]
+        result = cur.fetchone()
+        if result:
+            aluno_ids[row["matricula_aluno"]] = result[0]
 
     # --- Matricula ---
     cur.execute("""
@@ -96,7 +98,7 @@ for _, row in df.iterrows():
         ) VALUES (%s, %s, %s, %s, %s, %s, %s)
     """, (
         int(row["Ano"]),
-        row["matricula_aluno"],
+        aluno_ids[row["matricula_aluno"]],
         escola_id,
         disc_id,
         int(row["Série"]),

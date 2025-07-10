@@ -7,34 +7,28 @@ matricula_service = MatriculaService()
 @matricula_bp.route('/', methods=['GET'])
 def get_matriculas():
     try:
-        aluno_id = request.args.get('aluno_id', type=int)
-        escola_id = request.args.get('escola_id', type=int)
-        disciplina_id = request.args.get('disciplina_id', type=int)
-        ano = request.args.get('ano', type=int)
-        serie = request.args.get('serie', type=int)
-        status = request.args.get('status', type=lambda v: v.lower() == 'true')
+        # Get pagination parameters
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        search = request.args.get('search', '')
         
-        if aluno_id:
-            matriculas = matricula_service.get_matriculas_by_aluno(aluno_id)
-        elif escola_id:
-            matriculas = matricula_service.get_all_matriculas()  # Filter by escola_id in service
-            matriculas = [m for m in matriculas if m['id_escola'] == escola_id]
-        elif disciplina_id:
-            matriculas = matricula_service.get_all_matriculas()  # Filter by disciplina_id in service
-            matriculas = [m for m in matriculas if m['id_disciplina'] == disciplina_id]
-        elif ano:
-            matriculas = matricula_service.get_all_matriculas()  # Filter by ano in service
-            matriculas = [m for m in matriculas if m['ano'] == ano]
-        elif serie:
-            matriculas = matricula_service.get_all_matriculas()  # Filter by serie in service
-            matriculas = [m for m in matriculas if m['serie'] == serie]
-        elif status is not None:
-            matriculas = matricula_service.get_all_matriculas()  # Filter by status in service
-            matriculas = [m for m in matriculas if m['status'] == status]
-        else:
-            matriculas = matricula_service.get_all_matriculas()
+        # Ensure reasonable limits
+        page = max(1, page)
+        per_page = min(max(1, per_page), 100)  # Between 1 and 100
         
-        return jsonify(matriculas), 200
+        matriculas, total, total_pages = matricula_service.get_matriculas_paginated(
+            page, per_page, search
+        )
+        
+        return jsonify({
+            'enrollments': matriculas,
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total': total,
+                'total_pages': total_pages
+            }
+        }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -56,6 +50,29 @@ def create_matricula():
         return jsonify(matricula), 201
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@matricula_bp.route('/<int:id>', methods=['PUT'])
+def update_matricula(id):
+    try:
+        data = request.get_json()
+        matricula = matricula_service.update_matricula(id, data)
+        if matricula:
+            return jsonify(matricula), 200
+        return jsonify({'error': 'Matrícula não encontrada'}), 404
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@matricula_bp.route('/<int:id>', methods=['DELETE'])
+def delete_matricula(id):
+    try:
+        success = matricula_service.delete_matricula(id)
+        if success:
+            return jsonify({'message': 'Matrícula excluída com sucesso'}), 200
+        return jsonify({'error': 'Matrícula não encontrada'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

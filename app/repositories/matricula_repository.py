@@ -28,4 +28,34 @@ class MatriculaRepository(BaseRepository):
         query = Matricula.query.filter_by(matricula_aluno=matricula_aluno)
         if ano:
             query = query.filter_by(ano=ano)
-        return query.all() 
+        return query.all()
+    
+    def get_paginated(self, page: int, per_page: int, search: str = '') -> tuple:
+        """Get paginated enrollments with search"""
+        query = Matricula.query
+        
+        # Apply search filter (search in related data)
+        if search:
+            # Join with related tables for search
+            from models.aluno import Aluno
+            from models.escola import Escola
+            from models.disciplina import Disciplina
+            from app import db
+            
+            query = query.join(Aluno, Matricula.matricula_aluno == Aluno.matricula)\
+                        .join(Escola, Matricula.id_escola == Escola.id_escola)\
+                        .join(Disciplina, Matricula.id_disciplina == Disciplina.id_disciplina)\
+                        .filter(
+                            db.or_(
+                                Aluno.nome.ilike(f'%{search}%'),
+                                Escola.nome.ilike(f'%{search}%'),
+                                Disciplina.nome.ilike(f'%{search}%')
+                            )
+                        )
+        
+        total = query.count()
+        total_pages = (total + per_page - 1) // per_page
+        
+        matriculas = query.offset((page - 1) * per_page).limit(per_page).all()
+        
+        return matriculas, total, total_pages 

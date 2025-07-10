@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 class Aluno(db.Model):
     __tablename__ = 'aluno'
     
-    matricula = Column(Integer, primary_key=True)
+    matricula = Column(Integer, primary_key=True, autoincrement=True)
     nome = Column(String(100), nullable=False)
     data_mat = Column(Date, nullable=False)
     turno = Column(String(10), nullable=False)

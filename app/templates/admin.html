@@ -98,6 +98,41 @@
             opacity: 0.9;
         }
 
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            background: none;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .tab.active {
+            border-bottom-color: #dc3545;
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .tab:hover {
+            background: #f8f9fa;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
         .table-controls {
             display: flex;
             justify-content: space-between;
@@ -181,7 +216,7 @@
             margin-top: 1rem;
         }
 
-        .user-table {
+        .data-table {
             width: 100%;
             border-collapse: collapse;
             background: white;
@@ -190,20 +225,20 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
-        .user-table th,
-        .user-table td {
+        .data-table th,
+        .data-table td {
             padding: 1rem;
             text-align: left;
             border-bottom: 1px solid #eee;
         }
 
-        .user-table th {
+        .data-table th {
             background: #f8f9fa;
             font-weight: 600;
             color: #333;
         }
 
-        .user-table tr:hover {
+        .data-table tr:hover {
             background: #f8f9fa;
         }
 
@@ -236,6 +271,8 @@
             width: 90%;
             max-width: 600px;
             position: relative;
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
         .close {
@@ -262,7 +299,8 @@
         }
 
         .form-group input,
-        .form-group select {
+        .form-group select,
+        .form-group textarea {
             width: 100%;
             padding: 0.5rem;
             border: 1px solid #ddd;
@@ -300,6 +338,7 @@
             justify-content: center;
             gap: 0.5rem;
             margin-top: 1rem;
+            align-items: center;
         }
 
         .pagination button {
@@ -308,6 +347,7 @@
             background: white;
             cursor: pointer;
             border-radius: 5px;
+            transition: all 0.3s ease;
         }
 
         .pagination button.active {
@@ -318,6 +358,36 @@
 
         .pagination button:hover:not(.active) {
             background: #f8f9fa;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            margin: 0 1rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .page-size-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-left: 1rem;
+        }
+
+        .page-size-selector select {
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
         }
 
         @media (max-width: 768px) {
@@ -347,6 +417,18 @@
             .action-buttons {
                 flex-direction: column;
             }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab {
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -364,102 +446,219 @@
         <div id="alert" class="alert"></div>
 
         <div class="admin-card">
-            <h2>Gerenciamento de Usuários</h2>
-            <p>Gerencie todos os usuários do sistema SEDUC.</p>
+            <h2>Gerenciamento de Dados</h2>
+            <p>Gerencie todos os dados do sistema SEDUC.</p>
             
             <div class="stats-grid">
                 <div class="stat-card">
                     <h3 id="totalUsers">-</h3>
-                    <p>Usuários Registrados</p>
+                    <p>Usuários</p>
                 </div>
                 <div class="stat-card">
-                    <h3 id="activeUsers">-</h3>
-                    <p>Usuários Ativos</p>
+                    <h3 id="totalSchools">-</h3>
+                    <p>Escolas</p>
                 </div>
                 <div class="stat-card">
-                    <h3 id="adminUsers">-</h3>
-                    <p>Administradores</p>
+                    <h3 id="totalStudents">-</h3>
+                    <p>Alunos</p>
                 </div>
                 <div class="stat-card">
-                    <h3 id="regularUsers">-</h3>
-                    <p>Usuários Comuns</p>
+                    <h3 id="totalSubjects">-</h3>
+                    <p>Disciplinas</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalEnrollments">-</h3>
+                    <p>Matrículas</p>
                 </div>
             </div>
         </div>
 
         <div class="admin-card">
-            <div class="table-controls">
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Buscar usuários..." onkeyup="filterUsers()">
-                    <button class="btn-primary" onclick="filterUsers()">Buscar</button>
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('users')">Usuários</button>
+                <button class="tab" onclick="showTab('schools')">Escolas</button>
+                <button class="tab" onclick="showTab('students')">Alunos</button>
+                <button class="tab" onclick="showTab('subjects')">Disciplinas</button>
+                <button class="tab" onclick="showTab('enrollments')">Matrículas</button>
+            </div>
+
+            <!-- Users Tab -->
+            <div id="users" class="tab-content active">
+                <div class="table-controls">
+                    <div class="search-box">
+                        <input type="text" id="userSearchInput" placeholder="Buscar usuários..." onkeyup="filterData('users')">
+                        <button class="btn-primary" onclick="filterData('users')">Buscar</button>
+                    </div>
+                    <button class="btn-success" onclick="openCreateModal('users')">+ Novo Usuário</button>
                 </div>
-                <button class="btn-success" onclick="openCreateModal()">+ Novo Usuário</button>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome de Usuário</th>
+                                <th>Email</th>
+                                <th>Tipo</th>
+                                <th>Status</th>
+                                <th>Data de Criação</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <!-- User data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination" id="userPagination">
+                    <!-- Pagination controls will be added here -->
+                </div>
             </div>
 
-            <div class="table-container">
-                <table class="user-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nome de Usuário</th>
-                            <th>Email</th>
-                            <th>Tipo</th>
-                            <th>Status</th>
-                            <th>Data de Criação</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="userTableBody">
-                        <!-- User data will be loaded here -->
-                    </tbody>
-                </table>
+            <!-- Schools Tab -->
+            <div id="schools" class="tab-content">
+                <div class="table-controls">
+                    <div class="search-box">
+                        <input type="text" id="schoolSearchInput" placeholder="Buscar escolas..." onkeyup="filterData('schools')">
+                        <button class="btn-primary" onclick="filterData('schools')">Buscar</button>
+                    </div>
+                    <button class="btn-success" onclick="openCreateModal('schools')">+ Nova Escola</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Endereço</th>
+                                <th>Cidade</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="schoolTableBody">
+                            <!-- School data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination" id="schoolPagination">
+                    <!-- Pagination controls will be added here -->
+                </div>
             </div>
 
-            <div class="pagination" id="pagination">
-                <!-- Pagination controls will be added here -->
+            <!-- Students Tab -->
+            <div id="students" class="tab-content">
+                <div class="table-controls">
+                    <div class="search-box">
+                        <input type="text" id="studentSearchInput" placeholder="Buscar alunos..." onkeyup="filterData('students')">
+                        <button class="btn-primary" onclick="filterData('students')">Buscar</button>
+                    </div>
+                    <button class="btn-success" onclick="openCreateModal('students')">+ Novo Aluno</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Matrícula</th>
+                                <th>Nome</th>
+                                <th>Data de Matrícula</th>
+                                <th>Turno</th>
+                                <th>Série</th>
+                                <th>Escola</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentTableBody">
+                            <!-- Student data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination" id="studentPagination">
+                    <!-- Pagination controls will be added here -->
+                </div>
+            </div>
+
+            <!-- Subjects Tab -->
+            <div id="subjects" class="tab-content">
+                <div class="table-controls">
+                    <div class="search-box">
+                        <input type="text" id="subjectSearchInput" placeholder="Buscar disciplinas..." onkeyup="filterData('subjects')">
+                        <button class="btn-primary" onclick="filterData('subjects')">Buscar</button>
+                    </div>
+                    <button class="btn-success" onclick="openCreateModal('subjects')">+ Nova Disciplina</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subjectTableBody">
+                            <!-- Subject data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination" id="subjectPagination">
+                    <!-- Pagination controls will be added here -->
+                </div>
+            </div>
+
+            <!-- Enrollments Tab -->
+            <div id="enrollments" class="tab-content">
+                <div class="table-controls">
+                    <div class="search-box">
+                        <input type="text" id="enrollmentSearchInput" placeholder="Buscar matrículas..." onkeyup="filterData('enrollments')">
+                        <button class="btn-primary" onclick="filterData('enrollments')">Buscar</button>
+                    </div>
+                    <button class="btn-success" onclick="openCreateModal('enrollments')">+ Nova Matrícula</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Ano</th>
+                                <th>Aluno</th>
+                                <th>Escola</th>
+                                <th>Disciplina</th>
+                                <th>Série</th>
+                                <th>Nota</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="enrollmentTableBody">
+                            <!-- Enrollment data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination" id="enrollmentPagination">
+                    <!-- Pagination controls will be added here -->
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Create/Edit User Modal -->
-    <div id="userModal" class="modal">
+    <!-- Generic Modal for all forms -->
+    <div id="dataModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
-            <h2 id="modalTitle">Novo Usuário</h2>
+            <h2 id="modalTitle">Novo Registro</h2>
             
-            <form id="userForm">
-                <input type="hidden" id="userId" name="id">
-                
-                <div class="form-group">
-                    <label for="username">Nome de Usuário:</label>
-                    <input type="text" id="username" name="username" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="email">Email:</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">Senha:</label>
-                    <input type="password" id="password" name="password">
-                    <small style="color: #666;">Deixe em branco para manter a senha atual (ao editar)</small>
-                </div>
-                
-                <div class="form-group">
-                    <label for="userType">Tipo de Usuário:</label>
-                    <select id="userType" name="is_admin" required>
-                        <option value="false">Usuário Comum</option>
-                        <option value="true">Administrador</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="userStatus">Status:</label>
-                    <select id="userStatus" name="is_active" required>
-                        <option value="true">Ativo</option>
-                        <option value="false">Inativo</option>
-                    </select>
+            <form id="dataForm">
+                <div id="formFields">
+                    <!-- Form fields will be dynamically generated here -->
                 </div>
                 
                 <div class="form-actions">
@@ -490,14 +689,44 @@
         // Display user information
         document.getElementById('username').textContent = user.username || 'Admin';
         
-        // Load user data
-        loadUsers();
-        loadUserStats();
+        // Global variables
+        let currentData = {
+            users: [],
+            schools: [],
+            students: [],
+            subjects: [],
+            enrollments: []
+        };
+        let filteredData = {
+            users: [],
+            schools: [],
+            students: [],
+            subjects: [],
+            enrollments: []
+        };
+        let currentTab = 'users';
+        let editingId = null;
+        
+        // Pagination variables
+        let paginationState = {
+            users: { currentPage: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+            schools: { currentPage: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+            students: { currentPage: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+            subjects: { currentPage: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+            enrollments: { currentPage: 1, pageSize: 10, totalItems: 0, totalPages: 0 }
+        };
 
-        let currentUsers = [];
-        let filteredUsers = [];
-        let currentPage = 1;
-        const usersPerPage = 10;
+        // Initialize the page
+        loadAllData();
+        loadStats();
+        
+        // Initialize the page when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllData();
+            loadStats();
+        });
+        
+
 
         function showAlert(message, type) {
             const alertDiv = document.getElementById('alert');
@@ -516,172 +745,692 @@
             window.location.href = '/login';
         }
 
-        async function loadUsers() {
-            try {
-                const response = await fetch('/api/users', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+        async function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to selected tab
+            event.target.classList.add('active');
+            
+            currentTab = tabName;
+            
+            // Load data for the selected tab with server-side pagination
+            await loadTabData(tabName, 1, paginationState[tabName].pageSize);
+        }
 
-                if (response.ok) {
-                    currentUsers = await response.json();
-                    filteredUsers = [...currentUsers];
-                    displayUsers();
-                } else {
-                    showAlert('Erro ao carregar usuários', 'error');
+        async function loadAllData() {
+            try {
+                // Load stats data (total counts) for the dashboard
+                const [usersRes, schoolsRes, studentsRes, subjectsRes, enrollmentsRes] = await Promise.all([
+                    fetch('/api/users?page=1&per_page=1', { headers: { 'Authorization': `Bearer ${token}` } }),
+                    fetch('/api/escolas?page=1&per_page=1', { headers: { 'Authorization': `Bearer ${token}` } }),
+                    fetch('/api/alunos?page=1&per_page=1', { headers: { 'Authorization': `Bearer ${token}` } }),
+                    fetch('/api/disciplinas?page=1&per_page=1', { headers: { 'Authorization': `Bearer ${token}` } }),
+                    fetch('/api/matriculas?page=1&per_page=1', { headers: { 'Authorization': `Bearer ${token}` } })
+                ]);
+
+                // Extract total counts from pagination info
+                if (usersRes.ok) {
+                    const userData = await usersRes.json();
+                    currentData.users = userData.pagination ? userData.pagination.total : 0;
                 }
+                if (schoolsRes.ok) {
+                    const schoolData = await schoolsRes.json();
+                    currentData.schools = schoolData.pagination ? schoolData.pagination.total : 0;
+                }
+                if (studentsRes.ok) {
+                    const studentData = await studentsRes.json();
+                    currentData.students = studentData.pagination ? studentData.pagination.total : 0;
+                }
+                if (subjectsRes.ok) {
+                    const subjectData = await subjectsRes.json();
+                    currentData.subjects = subjectData.pagination ? subjectData.pagination.total : 0;
+                }
+                if (enrollmentsRes.ok) {
+                    const enrollmentData = await enrollmentsRes.json();
+                    currentData.enrollments = enrollmentData.pagination ? enrollmentData.pagination.total : 0;
+                }
+
+                // Load initial data for current tab
+                await loadTabData(currentTab);
             } catch (error) {
-                console.error('Failed to load users:', error);
-                showAlert('Erro ao carregar usuários', 'error');
+                console.error('Failed to load data:', error);
+                showAlert('Erro ao carregar dados', 'error');
             }
         }
 
-        async function loadUserStats() {
+        async function loadStats() {
             try {
-                const response = await fetch('/api/users/stats', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                const stats = {
+                    users: currentData.users || 0,
+                    schools: currentData.schools || 0,
+                    students: currentData.students || 0,
+                    subjects: currentData.subjects || 0,
+                    enrollments: currentData.enrollments || 0
+                };
 
+                document.getElementById('totalUsers').textContent = stats.users;
+                document.getElementById('totalSchools').textContent = stats.schools;
+                document.getElementById('totalStudents').textContent = stats.students;
+                document.getElementById('totalSubjects').textContent = stats.subjects;
+                document.getElementById('totalEnrollments').textContent = stats.enrollments;
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        async function loadTabData(type, page = 1, perPage = 10, search = '') {
+            try {
+                const endpoints = {
+                    'users': '/api/users',
+                    'schools': '/api/escolas',
+                    'students': '/api/alunos',
+                    'subjects': '/api/disciplinas',
+                    'enrollments': '/api/matriculas'
+                };
+                
+                const url = new URL(endpoints[type], window.location.origin);
+                url.searchParams.set('page', page);
+                url.searchParams.set('per_page', perPage);
+                if (search) {
+                    url.searchParams.set('search', search);
+                }
+                
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
                 if (response.ok) {
-                    const stats = await response.json();
-                    document.getElementById('totalUsers').textContent = stats.total || '0';
-                    document.getElementById('activeUsers').textContent = stats.active || '0';
-                    document.getElementById('adminUsers').textContent = stats.admins || '0';
-                    document.getElementById('regularUsers').textContent = stats.regular || '0';
-                } else {
-                    // Fallback to calculated stats
-                    const total = currentUsers.length;
-                    const active = currentUsers.filter(u => u.is_active).length;
-                    const admins = currentUsers.filter(u => u.is_admin).length;
-                    const regular = total - admins;
+                    const data = await response.json();
                     
-                    document.getElementById('totalUsers').textContent = total;
-                    document.getElementById('activeUsers').textContent = active;
-                    document.getElementById('adminUsers').textContent = admins;
-                    document.getElementById('regularUsers').textContent = regular;
+                    // Map the response structure to match the expected format
+                    let items = [];
+                    const responseMapping = {
+                        'users': 'users',
+                        'schools': 'escolas', 
+                        'students': 'students',
+                        'subjects': 'disciplinas',
+                        'enrollments': 'enrollments'
+                    };
+                    
+                    const dataKey = responseMapping[type];
+                    if (dataKey && data[dataKey]) {
+                        items = data[dataKey];
+                    } else if (Array.isArray(data)) {
+                        items = data;
+                    } else {
+                        console.warn(`Unexpected data structure for ${type}:`, data);
+                        items = [];
+                    }
+                    
+                    const pagination = data.pagination;
+                    
+                    // Ensure items is always an array
+                    if (!Array.isArray(items)) {
+                        console.error(`Items for ${type} is not an array:`, items);
+                        items = [];
+                    }
+                    
+                    // Update filteredData with the items
+                    filteredData[type] = items;
+                    
+                    // Update pagination state
+                    if (pagination) {
+                        paginationState[type].currentPage = pagination.page;
+                        paginationState[type].pageSize = pagination.per_page;
+                        paginationState[type].totalItems = pagination.total;
+                        if (type === 'enrollments') {
+                            paginationState[type].totalPages = pagination.total_pages;
+                        } else {
+                            paginationState[type].totalPages = pagination.pages;
+                        }
+                    }
+                    
+                    // Display the data
+                    displayData(type, false);
+                    
+                    return { items, pagination };
+                } else {
+                    console.error(`Failed to load ${type}:`, response.status);
+                    return { items: [], pagination: null };
                 }
             } catch (error) {
-                console.error('Failed to load user stats:', error);
+                console.error(`Error loading ${type}:`, error);
+                return { items: [], pagination: null };
             }
         }
 
-        function filterUsers() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            filteredUsers = currentUsers.filter(user => 
-                user.username.toLowerCase().includes(searchTerm) ||
-                user.email.toLowerCase().includes(searchTerm)
-            );
-            currentPage = 1;
-            displayUsers();
+        async function filterData(type) {
+            const searchInput = document.getElementById(`${type.slice(0, -1)}SearchInput`);
+            const searchTerm = searchInput.value;
+            
+            // Reset to first page when filtering
+            paginationState[type].currentPage = 1;
+            
+            // Load data with search using server-side pagination
+            await loadTabData(type, 1, paginationState[type].pageSize, searchTerm);
         }
 
-        function displayUsers() {
-            const tableBody = document.getElementById('userTableBody');
-            const startIndex = (currentPage - 1) * usersPerPage;
-            const endIndex = startIndex + usersPerPage;
-            const pageUsers = filteredUsers.slice(startIndex, endIndex);
-
+        function displayData(type, resetPage = false) {
+            const tableBody = document.getElementById(`${type.slice(0, -1)}TableBody`);
+            const pagination = document.getElementById(`${type.slice(0, -1)}Pagination`);
+            
+            // Ensure filteredData[type] exists
+            if (!filteredData[type]) {
+                filteredData[type] = [];
+            }
+            
+            // Get pagination info from state
+            const currentPage = paginationState[type].currentPage;
+            const pageSize = paginationState[type].pageSize;
+            
+            // Get total items and pages from pagination state (set by loadTabData)
+            const totalItems = paginationState[type].totalItems || filteredData[type].length;
+            const totalPages = paginationState[type].totalPages || Math.ceil(totalItems / pageSize);
+            
+            if (!tableBody) {
+                console.error(`Table body not found for ${type}`);
+                return;
+            }
+            
             tableBody.innerHTML = '';
 
-            pageUsers.forEach(user => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${user.id}</td>
-                    <td>${user.username}</td>
-                    <td>${user.email}</td>
-                    <td>${user.is_admin ? 'Administrador' : 'Usuário Comum'}</td>
-                    <td>${user.is_active ? 'Ativo' : 'Inativo'}</td>
-                    <td>${new Date(user.created_at).toLocaleDateString('pt-BR')}</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-warning" onclick="editUser(${user.id})">Editar</button>
-                            <button class="btn-danger" onclick="deleteUser(${user.id})">Excluir</button>
-                        </div>
-                    </td>
+            try {
+                filteredData[type].forEach(item => {
+                    const row = document.createElement('tr');
+                    
+                    switch (type) {
+                        case 'users':
+                            row.innerHTML = `
+                                <td>${item.id}</td>
+                                <td>${item.username}</td>
+                                <td>${item.email || '-'}</td>
+                                <td>${item.is_admin ? 'Administrador' : 'Usuário Comum'}</td>
+                                <td>${item.is_active ? 'Ativo' : 'Inativo'}</td>
+                                <td>${new Date(item.created_at).toLocaleDateString('pt-BR')}</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-warning" onclick="editItem('${type}', ${item.id})">Editar</button>
+                                        <button class="btn-danger" onclick="deleteItem('${type}', ${item.id})">Excluir</button>
+                                    </div>
+                                </td>
+                            `;
+                            break;
+                        case 'schools':
+                            row.innerHTML = `
+                                <td>${item.id_escola}</td>
+                                <td>${item.nome}</td>
+                                <td>${item.endereco}</td>
+                                <td>${item.cidade}</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-warning" onclick="editItem('${type}', ${item.id_escola})">Editar</button>
+                                        <button class="btn-danger" onclick="deleteItem('${type}', ${item.id_escola})">Excluir</button>
+                                    </div>
+                                </td>
+                            `;
+                            break;
+                        case 'students':
+                            row.innerHTML = `
+                                <td>${item.matricula}</td>
+                                <td>${item.nome}</td>
+                                <td>${new Date(item.data_mat).toLocaleDateString('pt-BR')}</td>
+                                <td>${item.turno}</td>
+                                <td>${item.serie}</td>
+                                <td>${item.escola_nome || 'N/A'}</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-warning" onclick="editItem('${type}', ${item.matricula})">Editar</button>
+                                        <button class="btn-danger" onclick="deleteItem('${type}', ${item.matricula})">Excluir</button>
+                                    </div>
+                                </td>
+                            `;
+                            break;
+                        case 'subjects':
+                            row.innerHTML = `
+                                <td>${item.id_disciplina}</td>
+                                <td>${item.nome}</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-warning" onclick="editItem('${type}', ${item.id_disciplina})">Editar</button>
+                                        <button class="btn-danger" onclick="deleteItem('${type}', ${item.id_disciplina})">Excluir</button>
+                                    </div>
+                                </td>
+                            `;
+                            break;
+                        case 'enrollments':
+                            row.innerHTML = `
+                                <td>${item.id}</td>
+                                <td>${item.ano}</td>
+                                <td>${item.aluno_nome || 'N/A'}</td>
+                                <td>${item.escola_nome || 'N/A'}</td>
+                                <td>${item.disciplina_nome || 'N/A'}</td>
+                                <td>${item.serie}</td>
+                                <td>${item.nota}</td>
+                                <td>${item.status ? 'Aprovado' : 'Reprovado'}</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-warning" onclick="editItem('${type}', ${item.id})">Editar</button>
+                                        <button class="btn-danger" onclick="deleteItem('${type}', ${item.id})">Excluir</button>
+                                    </div>
+                                </td>
+                            `;
+                            break;
+                    }
+                    
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error(`Error displaying data for ${type}:`, error);
+                tableBody.innerHTML = '<tr><td colspan="7">Erro ao carregar dados</td></tr>';
+            }
+            
+            // Generate pagination controls
+            try {
+                generatePagination(type, totalPages, currentPage, totalItems, pageSize);
+            } catch (error) {
+                console.error(`Error generating pagination for ${type}:`, error);
+                const pagination = document.getElementById(`${type.slice(0, -1)}Pagination`);
+                if (pagination) {
+                    pagination.innerHTML = '<span class="pagination-info">Erro na paginação</span>';
+                }
+            }
+            
+            // Ensure pagination is always shown (fallback)
+            setTimeout(() => {
+                const pagination = document.getElementById(`${type.slice(0, -1)}Pagination`);
+                if (pagination && pagination.innerHTML.trim() === '') {
+                    console.log(`Pagination was empty for ${type}, generating fallback`);
+                    generatePagination(type, totalPages, currentPage, totalItems, pageSize);
+                }
+            }, 100);
+        }
+
+        function generatePagination(type, totalPages, currentPage, totalItems, pageSize) {
+            const pagination = document.getElementById(`${type.slice(0, -1)}Pagination`);
+            
+            if (!pagination) {
+                console.error(`Pagination element not found for ${type}`);
+                return;
+            }
+            
+            const startItem = totalPages <= 1 ? 1 : (currentPage - 1) * pageSize + 1;
+            const endItem = totalPages <= 1 ? totalItems : Math.min(currentPage * pageSize, totalItems);
+            
+            // Always show pagination info and page size selector
+            let paginationHTML = `
+                <span class="pagination-info">
+                    Mostrando ${startItem}-${endItem} de ${totalItems} registros
+                </span>
+                <div class="page-size-selector">
+                    <label>Por página:</label>
+                    <select onchange="changePageSize('${type}', this.value)">
+                        <option value="5" ${pageSize === 5 ? 'selected' : ''}>5</option>
+                        <option value="10" ${pageSize === 10 ? 'selected' : ''}>10</option>
+                        <option value="25" ${pageSize === 25 ? 'selected' : ''}>25</option>
+                        <option value="50" ${pageSize === 50 ? 'selected' : ''}>50</option>
+                    </select>
+                </div>
+            `;
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = paginationHTML;
+                return;
+            }
+            
+            paginationHTML = `
+                <button onclick="changePage('${type}', 1)" ${currentPage === 1 ? 'disabled' : ''}>
+                    Primeira
+                </button>
+                <button onclick="changePage('${type}', ${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                    Anterior
+                </button>
+            `;
+            
+            // Add page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHTML += `
+                    <button onclick="changePage('${type}', ${i})" class="${i === currentPage ? 'active' : ''}">
+                        ${i}
+                    </button>
                 `;
-                tableBody.appendChild(row);
+            }
+            
+            paginationHTML += `
+                <button onclick="changePage('${type}', ${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                    Próximo
+                </button>
+                <button onclick="changePage('${type}', ${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>
+                    Última
+                </button>
+                <span class="pagination-info">
+                    Mostrando ${startItem}-${endItem} de ${totalItems} registros
+                </span>
+                <div class="page-size-selector">
+                    <label>Por página:</label>
+                    <select onchange="changePageSize('${type}', this.value)">
+                        <option value="5" ${pageSize === 5 ? 'selected' : ''}>5</option>
+                        <option value="10" ${pageSize === 10 ? 'selected' : ''}>10</option>
+                        <option value="25" ${pageSize === 25 ? 'selected' : ''}>25</option>
+                        <option value="50" ${pageSize === 50 ? 'selected' : ''}>50</option>
+                    </select>
+                </div>
+            `;
+            
+            pagination.innerHTML = paginationHTML;
+        }
+
+        async function changePage(type, page) {
+            paginationState[type].currentPage = page;
+            
+            const searchInput = document.getElementById(`${type.slice(0, -1)}SearchInput`);
+            const searchTerm = searchInput ? searchInput.value : '';
+            
+            await loadTabData(type, page, paginationState[type].pageSize, searchTerm);
+        }
+
+        async function changePageSize(type, newSize) {
+            paginationState[type].pageSize = parseInt(newSize);
+            paginationState[type].currentPage = 1; // Reset to first page when changing page size
+            
+            const searchInput = document.getElementById(`${type.slice(0, -1)}SearchInput`);
+            const searchTerm = searchInput ? searchInput.value : '';
+            
+            await loadTabData(type, 1, newSize, searchTerm);
+        }
+
+        async function loadRelatedData() {
+            try {
+                console.log('Loading related data...');
+                
+                // Load schools for dropdowns
+                const schoolsRes = await fetch('/api/escolas?page=1&per_page=100', { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                });
+                if (schoolsRes.ok) {
+                    const schoolData = await schoolsRes.json();
+                    currentData.allSchools = schoolData.escolas || [];
+                    console.log('Loaded schools:', currentData.allSchools.length);
+                }
+                
+                // Load students for dropdowns
+                const studentsRes = await fetch('/api/alunos?page=1&per_page=100', { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                });
+                if (studentsRes.ok) {
+                    const studentData = await studentsRes.json();
+                    currentData.allStudents = studentData.students || [];
+                    console.log('Loaded students:', currentData.allStudents.length);
+                }
+                
+                // Load subjects for dropdowns
+                const subjectsRes = await fetch('/api/disciplinas?page=1&per_page=100', { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                });
+                if (subjectsRes.ok) {
+                    const subjectData = await subjectsRes.json();
+                    currentData.allSubjects = subjectData.disciplinas || [];
+                    console.log('Loaded subjects:', currentData.allSubjects.length);
+                }
+            } catch (error) {
+                console.error('Failed to load related data:', error);
+            }
+        }
+
+        async function openCreateModal(type) {
+            editingId = null;
+            document.getElementById('modalTitle').textContent = `Novo ${getTypeName(type)}`;
+            document.getElementById('dataForm').reset();
+            
+            // Load related data for dropdowns
+            await loadRelatedData();
+            
+            const formFields = document.getElementById('formFields');
+            formFields.innerHTML = generateFormFields(type);
+            
+            document.getElementById('dataModal').style.display = 'block';
+        }
+
+        async function editItem(type, id) {
+            editingId = id;
+            const item = filteredData[type].find(item => {
+                switch (type) {
+                    case 'users': return item.id === id;
+                    case 'schools': return item.id_escola === id;
+                    case 'students': return item.matricula === id;
+                    case 'subjects': return item.id_disciplina === id;
+                    case 'enrollments': return item.id === id;
+                }
             });
-
-            displayPagination();
-        }
-
-        function displayPagination() {
-            const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
-            const pagination = document.getElementById('pagination');
             
-            pagination.innerHTML = '';
+            if (!item) return;
+
+            document.getElementById('modalTitle').textContent = `Editar ${getTypeName(type)}`;
             
-            if (totalPages <= 1) return;
+            // Load related data for dropdowns
+            await loadRelatedData();
+            
+            const formFields = document.getElementById('formFields');
+            formFields.innerHTML = generateFormFields(type, item);
+            
+            // Populate form with existing data
+            Object.keys(item).forEach(key => {
+                const input = document.querySelector(`[name="${key}"]`);
+                if (input) {
+                    input.value = item[key];
+                }
+            });
+            
+            document.getElementById('dataModal').style.display = 'block';
+        }
 
-            // Previous button
-            if (currentPage > 1) {
-                const prevBtn = document.createElement('button');
-                prevBtn.textContent = 'Anterior';
-                prevBtn.onclick = () => {
-                    currentPage--;
-                    displayUsers();
-                };
-                pagination.appendChild(prevBtn);
-            }
-
-            // Page numbers
-            for (let i = 1; i <= totalPages; i++) {
-                const pageBtn = document.createElement('button');
-                pageBtn.textContent = i;
-                pageBtn.className = i === currentPage ? 'active' : '';
-                pageBtn.onclick = () => {
-                    currentPage = i;
-                    displayUsers();
-                };
-                pagination.appendChild(pageBtn);
-            }
-
-            // Next button
-            if (currentPage < totalPages) {
-                const nextBtn = document.createElement('button');
-                nextBtn.textContent = 'Próximo';
-                nextBtn.onclick = () => {
-                    currentPage++;
-                    displayUsers();
-                };
-                pagination.appendChild(nextBtn);
+        function generateFormFields(type, item = null) {
+            switch (type) {
+                case 'users':
+                    return `
+                        ${item ? `<input type="hidden" name="id" value="${item.id}">` : ''}
+                        <div class="form-group">
+                            <label for="username">Nome de Usuário:</label>
+                            <input type="text" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email:</label>
+                            <input type="email" name="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Senha:</label>
+                            <input type="password" name="password" ${!item ? 'required' : ''}>
+                            ${item ? '<small style="color: #666;">Deixe em branco para manter a senha atual</small>' : ''}
+                        </div>
+                        <div class="form-group">
+                            <label for="is_admin">Tipo de Usuário:</label>
+                            <select name="is_admin" required>
+                                <option value="false">Usuário Comum</option>
+                                <option value="true">Administrador</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="is_active">Status:</label>
+                            <select name="is_active" required>
+                                <option value="true">Ativo</option>
+                                <option value="false">Inativo</option>
+                            </select>
+                        </div>
+                    `;
+                case 'schools':
+                    return `
+                        ${item ? `<input type="hidden" name="id_escola" value="${item.id_escola}">` : ''}
+                        <div class="form-group">
+                            <label for="nome">Nome da Escola:</label>
+                            <input type="text" name="nome" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="endereco">Endereço:</label>
+                            <input type="text" name="endereco" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cidade">Cidade:</label>
+                            <input type="text" name="cidade" required>
+                        </div>
+                    `;
+                case 'students':
+                    return `
+                        ${item ? `<input type="hidden" name="matricula" value="${item.matricula}">` : ''}
+                        <div class="form-group">
+                            <label for="nome">Nome do Aluno:</label>
+                            <input type="text" name="nome" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="data_mat">Data de Matrícula:</label>
+                            <input type="date" name="data_mat" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="turno">Turno:</label>
+                            <select name="turno" required>
+                                <option value="Manhã">Manhã</option>
+                                <option value="Tarde">Tarde</option>
+                                <option value="Noite">Noite</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="serie">Série:</label>
+                            <select name="serie" required>
+                                <option value="1">1º Ano</option>
+                                <option value="2">2º Ano</option>
+                                <option value="3">3º Ano</option>
+                                <option value="4">4º Ano</option>
+                                <option value="5">5º Ano</option>
+                                <option value="6">6º Ano</option>
+                                <option value="7">7º Ano</option>
+                                <option value="8">8º Ano</option>
+                                <option value="9">9º Ano</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="id_escola">Escola:</label>
+                            <select name="id_escola" required>
+                                <option value="">Selecione uma escola</option>
+                                ${currentData.allSchools.map(school => 
+                                    `<option value="${school.id_escola}">${school.nome} - ${school.cidade}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                    `;
+                case 'subjects':
+                    return `
+                        ${item ? `<input type="hidden" name="id_disciplina" value="${item.id_disciplina}">` : ''}
+                        <div class="form-group">
+                            <label for="nome">Nome da Disciplina:</label>
+                            <input type="text" name="nome" required>
+                        </div>
+                    `;
+                case 'enrollments':
+                    return `
+                        ${item ? `<input type="hidden" name="id" value="${item.id}">` : ''}
+                        <div class="form-group">
+                            <label for="ano">Ano:</label>
+                            <input type="number" name="ano" min="2020" max="2030" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="matricula_aluno">Aluno:</label>
+                            <select name="matricula_aluno" required>
+                                <option value="">Selecione um aluno</option>
+                                ${currentData.allStudents ? currentData.allStudents.map(student => 
+                                    `<option value="${student.matricula}">${student.nome} (${student.matricula})</option>`
+                                ).join('') : '<option value="">Carregando alunos...</option>'}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="id_escola">Escola:</label>
+                            <select name="id_escola" required>
+                                <option value="">Selecione uma escola</option>
+                                ${currentData.allSchools ? currentData.allSchools.map(school => 
+                                    `<option value="${school.id_escola}">${school.nome} - ${school.cidade}</option>`
+                                ).join('') : '<option value="">Carregando escolas...</option>'}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="id_disciplina">Disciplina:</label>
+                            <select name="id_disciplina" required>
+                                <option value="">Selecione uma disciplina</option>
+                                ${currentData.allSubjects ? currentData.allSubjects.map(subject => 
+                                    `<option value="${subject.id_disciplina}">${subject.nome}</option>`
+                                ).join('') : '<option value="">Carregando disciplinas...</option>'}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="serie">Série:</label>
+                            <select name="serie" required>
+                                <option value="1">1º Ano</option>
+                                <option value="2">2º Ano</option>
+                                <option value="3">3º Ano</option>
+                                <option value="4">4º Ano</option>
+                                <option value="5">5º Ano</option>
+                                <option value="6">6º Ano</option>
+                                <option value="7">7º Ano</option>
+                                <option value="8">8º Ano</option>
+                                <option value="9">9º Ano</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="nota">Nota:</label>
+                            <input type="number" name="nota" min="0" max="10" step="0.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Status:</label>
+                            <select name="status" required>
+                                <option value="true">Aprovado</option>
+                                <option value="false">Reprovado</option>
+                            </select>
+                        </div>
+                    `;
+                default:
+                    return '';
             }
         }
 
-        function openCreateModal() {
-            document.getElementById('modalTitle').textContent = 'Novo Usuário';
-            document.getElementById('userForm').reset();
-            document.getElementById('userId').value = '';
-            document.getElementById('password').required = true;
-            document.getElementById('userModal').style.display = 'block';
-        }
-
-        function editUser(userId) {
-            const user = currentUsers.find(u => u.id === userId);
-            if (!user) return;
-
-            document.getElementById('modalTitle').textContent = 'Editar Usuário';
-            document.getElementById('userId').value = user.id;
-            document.getElementById('username').value = user.username;
-            document.getElementById('email').value = user.email;
-            document.getElementById('userType').value = user.is_admin.toString();
-            document.getElementById('userStatus').value = user.is_active.toString();
-            document.getElementById('password').required = false;
-            document.getElementById('userModal').style.display = 'block';
+        function getTypeName(type) {
+            const names = {
+                'users': 'Usuário',
+                'schools': 'Escola',
+                'students': 'Aluno',
+                'subjects': 'Disciplina',
+                'enrollments': 'Matrícula'
+            };
+            return names[type] || 'Registro';
         }
 
         function closeModal() {
-            document.getElementById('userModal').style.display = 'none';
+            document.getElementById('dataModal').style.display = 'none';
+            editingId = null;
         }
 
-        async function deleteUser(userId) {
-            if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
+        async function deleteItem(type, id) {
+            if (!confirm(`Tem certeza que deseja excluir este ${getTypeName(type)}?`)) return;
 
             try {
-                const response = await fetch(`/api/users/${userId}`, {
+                const endpoints = {
+                    'users': `/api/users/${id}`,
+                    'schools': `/api/escolas/${id}`,
+                    'students': `/api/alunos/${id}`,
+                    'subjects': `/api/disciplinas/${id}`,
+                    'enrollments': `/api/matriculas/${id}`
+                };
+
+                const response = await fetch(endpoints[type], {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -689,59 +1438,78 @@
                 });
 
                 if (response.ok) {
-                    showAlert('Usuário excluído com sucesso', 'success');
-                    loadUsers();
-                    loadUserStats();
+                    showAlert(`${getTypeName(type)} excluído com sucesso`, 'success');
+                    loadAllData();
+                    loadStats();
                 } else {
-                    showAlert('Erro ao excluir usuário', 'error');
+                    showAlert(`Erro ao excluir ${getTypeName(type)}`, 'error');
                 }
             } catch (error) {
-                console.error('Failed to delete user:', error);
-                showAlert('Erro ao excluir usuário', 'error');
+                console.error('Failed to delete item:', error);
+                showAlert(`Erro ao excluir ${getTypeName(type)}`, 'error');
             }
         }
 
         // Handle form submission
-        document.getElementById('userForm').addEventListener('submit', async (e) => {
+        document.getElementById('dataForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const formData = new FormData(e.target);
-            const userData = Object.fromEntries(formData.entries());
+            const data = Object.fromEntries(formData.entries());
             
-            const userId = userData.id;
-            const isEdit = userId !== '';
+            // Convert boolean strings to actual booleans
+            if (data.is_admin !== undefined) data.is_admin = data.is_admin === 'true';
+            if (data.is_active !== undefined) data.is_active = data.is_active === 'true';
+            if (data.status !== undefined) data.status = data.status === 'true';
+            
+            // Convert numeric fields
+            if (data.serie) data.serie = parseInt(data.serie);
+            if (data.ano) data.ano = parseInt(data.ano);
+            if (data.nota) data.nota = parseFloat(data.nota);
+            if (data.id_escola) data.id_escola = parseInt(data.id_escola);
+            if (data.id_disciplina) data.id_disciplina = parseInt(data.id_disciplina);
+            if (data.matricula_aluno) data.matricula_aluno = parseInt(data.matricula_aluno);
+            
+            const isEdit = editingId !== null;
             
             try {
-                const url = isEdit ? `/api/users/${userId}` : '/api/users';
+                const endpoints = {
+                    'users': isEdit ? `/api/users/${editingId}` : '/api/users',
+                    'schools': isEdit ? `/api/escolas/${editingId}` : '/api/escolas',
+                    'students': isEdit ? `/api/alunos/${editingId}` : '/api/alunos',
+                    'subjects': isEdit ? `/api/disciplinas/${editingId}` : '/api/disciplinas',
+                    'enrollments': isEdit ? `/api/matriculas/${editingId}` : '/api/matriculas'
+                };
+
                 const method = isEdit ? 'PUT' : 'POST';
                 
-                const response = await fetch(url, {
+                const response = await fetch(endpoints[currentTab], {
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify(userData)
+                    body: JSON.stringify(data)
                 });
 
                 if (response.ok) {
-                    showAlert(`Usuário ${isEdit ? 'atualizado' : 'criado'} com sucesso`, 'success');
+                    showAlert(`${getTypeName(currentTab)} ${isEdit ? 'atualizado' : 'criado'} com sucesso`, 'success');
                     closeModal();
-                    loadUsers();
-                    loadUserStats();
+                    loadAllData();
+                    loadStats();
                 } else {
                     const error = await response.json();
-                    showAlert(error.message || 'Erro ao salvar usuário', 'error');
+                    showAlert(error.message || `Erro ao salvar ${getTypeName(currentTab)}`, 'error');
                 }
             } catch (error) {
-                console.error('Failed to save user:', error);
-                showAlert('Erro ao salvar usuário', 'error');
+                console.error('Failed to save item:', error);
+                showAlert(`Erro ao salvar ${getTypeName(currentTab)}`, 'error');
             }
         });
 
         // Close modal when clicking outside
         window.onclick = function(event) {
-            const modal = document.getElementById('userModal');
+            const modal = document.getElementById('dataModal');
             if (event.target === modal) {
                 closeModal();
             }
@@ -767,6 +1535,8 @@
                 console.error('Token verification failed:', error);
             }
         }, 300000); // Check every 5 minutes
+
+
     </script>
 </body>
 </html> 

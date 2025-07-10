@@ -15,4 +15,21 @@ class BaseRepository:
         instance = self.model(**data)
         db.session.add(instance)
         db.session.commit()
-        return instance 
+        return instance
+    
+    def update(self, id: int, data: Dict[str, Any]) -> Optional[Any]:
+        instance = self.get_by_id(id)
+        if instance:
+            for key, value in data.items():
+                if hasattr(instance, key):
+                    setattr(instance, key, value)
+            db.session.commit()
+        return instance
+    
+    def delete(self, id: int) -> bool:
+        instance = self.get_by_id(id)
+        if instance:
+            db.session.delete(instance)
+            db.session.commit()
+            return True
+        return False 

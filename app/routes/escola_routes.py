@@ -7,18 +7,31 @@ escola_service = EscolaService()
 @escola_bp.route('/', methods=['GET'])
 def get_escolas():
     try:
+        # Get pagination parameters
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        search = request.args.get('search', '')
+        
+        # Handle query parameters
         cidade = request.args.get('cidade')
-        nome = request.args.get('nome')
         
-        if cidade:
-            escolas = escola_service.get_escolas_by_cidade(cidade)
-        elif nome:
-            escolas = escola_service.get_all_escolas()  # Filter by nome in service
-            escolas = [e for e in escolas if nome.lower() in e['nome'].lower()]
-        else:
-            escolas = escola_service.get_all_escolas()
+        # Ensure reasonable limits
+        page = max(1, page)
+        per_page = min(max(1, per_page), 100)  # Between 1 and 100
         
-        return jsonify(escolas), 200
+        escolas, total, total_pages = escola_service.get_escolas_paginated(
+            page, per_page, search, cidade
+        )
+        
+        return jsonify({
+            'escolas': escolas,
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total': total,
+                'total_pages': total_pages
+            }
+        }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -40,5 +53,28 @@ def create_escola():
         return jsonify(escola), 201
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@escola_bp.route('/<int:id_escola>', methods=['PUT'])
+def update_escola(id_escola):
+    try:
+        data = request.get_json()
+        escola = escola_service.update_escola(id_escola, data)
+        if escola:
+            return jsonify(escola), 200
+        return jsonify({'error': 'Escola não encontrada'}), 404
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@escola_bp.route('/<int:id_escola>', methods=['DELETE'])
+def delete_escola(id_escola):
+    try:
+        success = escola_service.delete_escola(id_escola)
+        if success:
+            return jsonify({'message': 'Escola excluída com sucesso'}), 200
+        return jsonify({'error': 'Escola não encontrada'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500 
