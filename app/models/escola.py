@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 class Escola(db.Model):
     __tablename__ = 'escola'
     
-    id_escola = Column(Integer, primary_key=True)
+    id_escola = Column(String(20), primary_key=True)
     nome = Column(String(100), nullable=False)
     endereco = Column(String(100), nullable=False)
     cidade = Column(String(50), nullable=False)

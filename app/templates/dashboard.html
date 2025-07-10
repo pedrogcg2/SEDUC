@@ -198,6 +198,11 @@
                 <p>Gerenciar informações das escolas</p>
             </div>
             
+            <div class="menu-card" onclick="navigateTo('bi')">
+                <h3>📊 Business Intelligence</h3>
+                <p>Análise de dados e relatórios</p>
+            </div>
+            
             <div class="menu-card" onclick="navigateTo('disciplinas')">
                 <h3>Disciplinas</h3>
                 <p>Gerenciar disciplinas e cursos</p>
@@ -261,9 +266,13 @@
         }
 
         function navigateTo(section) {
-            // For now, just show an alert
-            // In a real application, this would navigate to the respective section
-            showAlert(`Navegação para ${section} - Funcionalidade em desenvolvimento`, 'error');
+            if (section === 'bi') {
+                window.location.href = '/bi';
+            } else {
+                // For now, just show an alert
+                // In a real application, this would navigate to the respective section
+                showAlert(`Navegação para ${section} - Funcionalidade em desenvolvimento`, 'error');
+            }
         }
 
         // Verify token validity periodically

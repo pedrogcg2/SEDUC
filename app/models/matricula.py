@@ -1,5 +1,5 @@
 from app import db
-from sqlalchemy import Column, Integer, SmallInteger, Float, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, SmallInteger, Float, Boolean, ForeignKey, String
 from sqlalchemy.orm import relationship
 
 class Matricula(db.Model):
@@ -8,7 +8,7 @@ class Matricula(db.Model):
     id = Column(Integer, primary_key=True)
     ano = Column(Integer, nullable=False)
     matricula_aluno = Column(Integer, ForeignKey('aluno.matricula'), nullable=False)
-    id_escola = Column(Integer, ForeignKey('escola.id_escola'), nullable=False)
+    id_escola = Column(String(20), ForeignKey('escola.id_escola'), nullable=False)
     id_disciplina = Column(Integer, ForeignKey('disciplina.id_disciplina'), nullable=False)
     serie = Column(SmallInteger, nullable=False)
     nota = Column(Float, nullable=False)
