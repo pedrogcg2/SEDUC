@@ -114,6 +114,11 @@ class UserService:
         
         return True
     
+    def get_users_paginated(self, page, per_page, search=''):
+        """Get users with pagination and search"""
+        users, total, total_pages = self.user_repository.get_paginated(page, per_page, search)
+        return [user.to_dict() for user in users], total, total_pages
+    
     def get_user_stats(self):
         """Get user statistics"""
         users = self.user_repository.get_all()

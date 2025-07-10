@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 class Disciplina(db.Model):
     __tablename__ = 'disciplina'
     
-    id_disciplina = Column(Integer, primary_key=True)
+    id_disciplina = Column(Integer, primary_key=True, autoincrement=True)
     nome = Column(String(50), nullable=False)
     
     # Relationships

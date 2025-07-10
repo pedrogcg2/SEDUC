@@ -247,6 +247,7 @@
                     showAlert(data.message || 'Erro ao fazer login', 'error');
                 }
             } catch (error) {
+                console.log(error);
                 showAlert('Erro de conexão. Tente novamente.', 'error');
             } finally {
                 hideLoading();

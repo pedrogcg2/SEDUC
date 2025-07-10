@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 class Matricula(db.Model):
     __tablename__ = 'matricula'
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     ano = Column(Integer, nullable=False)
     matricula_aluno = Column(Integer, ForeignKey('aluno.matricula'), nullable=False)
     id_escola = Column(String(20), ForeignKey('escola.id_escola'), nullable=False)
@@ -28,5 +28,8 @@ class Matricula(db.Model):
             'id_disciplina': self.id_disciplina,
             'serie': self.serie,
             'nota': self.nota,
-            'status': self.status
+            'status': self.status,
+            'aluno_nome': self.aluno.nome if self.aluno else None,
+            'escola_nome': self.escola.nome if self.escola else None,
+            'disciplina_nome': self.disciplina.nome if self.disciplina else None
         } 
