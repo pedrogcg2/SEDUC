@@ -43,6 +43,8 @@ def init_database():
         else:
             print("Admin user already exists")
         
+        total = db.session.query(Aluno).count()
+        
         print("\nDatabase initialization completed!")
         print("You can now start the API server.")
 

@@ -1,5 +1,5 @@
-
 CREATE DATABASE sqldb_seduc;
+
 
 \c sqldb_seduc;
 
@@ -37,4 +37,5 @@ CREATE TABLE matricula(
    CONSTRAINT matricula_aluno_FK FOREIGN KEY (matricula_aluno) REFERENCES aluno(matricula),
    CONSTRAINT matricula_escola_FK FOREIGN KEY (id_escola) REFERENCES escola(id_escola),
    CONSTRAINT matricula_disciplina_FK FOREIGN KEY (id_disciplina) REFERENCES disciplina(id_disciplina)
+
 );

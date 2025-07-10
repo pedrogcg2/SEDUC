@@ -2,13 +2,22 @@ import pandas as pd
 import psycopg2
 from psycopg2.extras import execute_values
 
-# Load CSV
-df = pd.read_csv("data/dados_simulados_educacao.csv")
-
+# Load CSV with UTF-8 encoding
+df = pd.read_csv("data/dados_simulados_perturbado_extremo.csv", encoding='utf-8')
 # Clean up and normalize data
+df["Nota 1º Tri"] = df["Nota 1º Tri"].str.replace(",", ".").astype(float)
+df["Nota 2º Tri"] = df["Nota 2º Tri"].str.replace(",", ".").astype(float)
+df["Nota 3º Tri"] = df["Nota 3º Tri"].str.replace(",", ".").astype(float)
+df["Nota 4º Tri"] = df["Nota 4º Tri"].str.replace(",", ".").astype(float)
 df["Média Anual"] = df["Média Anual"].str.replace(",", ".").astype(float)
 df["Aprovado"] = df["Aprovado"].map({"Sim": True, "Não": False})
 df["Série"] = df["Série"].str.extract(r"(\d+)").astype(int)
+
+# Calculate average from individual trimester grades for verification
+df["Média Calculada"] = (df["Nota 1º Tri"] + df["Nota 2º Tri"] + df["Nota 3º Tri"] + df["Nota 4º Tri"]) / 4
+
+# Use calculated average if it differs significantly from the provided one
+df["Nota Final"] = df["Média Calculada"]
 
 # Connect to PostgreSQL
 conn = psycopg2.connect(
@@ -25,22 +34,22 @@ escola_ids = {}
 disciplina_ids = {}
 aluno_ids = {}
 aluno_appearance_tracker = {}
+
 for _, row in df.iterrows():
     # --- Escola ---
-    escola_key = (row["Escola"], row["Cidade"])
+    escola_key = (row["Escola"], row["Cidade"], row["ID_Escola"])
     if escola_key not in escola_ids:
         cur.execute("""
-            INSERT INTO escola (nome, endereco, cidade)
-            VALUES (%s, %s, %s)
-            ON CONFLICT DO NOTHING
+            INSERT INTO escola (id_escola, nome, endereco, cidade)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (id_escola) DO UPDATE SET
+                nome = EXCLUDED.nome,
+                endereco = EXCLUDED.endereco,
+                cidade = EXCLUDED.cidade
             RETURNING id_escola
-        """, (row["Escola"], "Endereco Exemplo", row["Cidade"]))
+        """, (row["ID_Escola"], row["Escola"], "Endereco Exemplo", row["Cidade"]))
         result = cur.fetchone()
-        if result:
-            escola_id = result[0]
-        else:
-            cur.execute("SELECT id_escola FROM escola WHERE nome = %s AND cidade = %s", (row["Escola"], row["Cidade"]))
-            escola_id = cur.fetchone()[0]
+        escola_id = result[0] if result else row["ID_Escola"]
         escola_ids[escola_key] = escola_id
     else:
         escola_id = escola_ids[escola_key]
@@ -102,7 +111,7 @@ for _, row in df.iterrows():
         escola_id,
         disc_id,
         int(row["Série"]),
-        row["Média Anual"],
+        row["Nota Final"],
         row["Aprovado"]
     ))
 
@@ -110,3 +119,5 @@ for _, row in df.iterrows():
 conn.commit()
 cur.close()
 conn.close()
+
+print("Database seeding completed successfully!")
