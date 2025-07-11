@@ -10,7 +10,7 @@ class Aluno(db.Model):
     data_mat = Column(Date, nullable=False)
     turno = Column(String(10), nullable=False)
     serie = Column(SmallInteger, nullable=False)
-    id_escola = Column(String(20), ForeignKey('escola.id_escola'), nullable=False)
+    id_escola = Column(Integer, ForeignKey('escola.id_escola'), nullable=False)
     
     # Relationships
     escola = relationship('Escola', back_populates='alunos')

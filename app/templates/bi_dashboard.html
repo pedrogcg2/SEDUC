@@ -374,7 +374,13 @@
                 // Mostrar as primeiras 10 escolas
                 console.log('Primeiras 10 escolas:', schools.slice(0, 10).map(s => s.school_name));
                 
-                const labels = schools.slice(0, 10).map(s => s.school_name);
+                const labels = schools.slice(0, 10).map(s => {
+                    const nameParts = s.school_name.split(' ');
+                    if (nameParts.length > 3) {
+                        return nameParts.slice(-3).join(' ');
+                    }
+                    return s.school_name;
+                });
                 const values = schools.slice(0, 10).map(s => s.average_grade);
                 
                 console.log('Labels para o gráfico:', labels);
@@ -480,7 +486,13 @@
                 const response = await axios.get('/api/bi/schools-performance');
                 const schools = response.data.data;
                 
-                const labels = schools.slice(0, 10).map(s => s.school_name);
+                const labels = schools.slice(0, 10).map(s => {
+                    const nameParts = s.school_name.split(' ');
+                    if (nameParts.length > 3) {
+                        return nameParts.slice(-3).join(' ');
+                    }
+                    return s.school_name;
+                });
                 const values = schools.slice(0, 10).map(s => s.approval_rate);
                 
                 createBarChart('approvalChart', { labels, values }, 'Taxa de Aprovação (%)', colors[4]);

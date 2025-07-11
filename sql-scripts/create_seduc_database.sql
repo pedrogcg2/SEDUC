@@ -16,7 +16,7 @@ CREATE TABLE aluno(
    data_mat DATE NOT NULL,
    turno VARCHAR(10) NOT NULL,
    serie SMALLINT NOT NULL,
-   id_escola SMALLINT NOT NULL,
+   id_escola INTEGER NOT NULL,
    CONSTRAINT aluno_FK FOREIGN KEY (id_escola) REFERENCES escola(id_escola)
 );
 
