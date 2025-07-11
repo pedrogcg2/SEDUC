@@ -1037,7 +1037,7 @@
                                 <td>${item.escola_nome || 'N/A'}</td>
                                 <td>${item.disciplina_nome || 'N/A'}</td>
                                 <td>${item.serie}</td>
-                                <td>${item.nota}</td>
+                                <td>${Number(item.nota).toFixed(2)}</td>
                                 <td>${item.status ? 'Aprovado' : 'Reprovado'}</td>
                                 <td>
                                     <div class="action-buttons">

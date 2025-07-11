@@ -215,8 +215,28 @@
             '#00f2fe', '#43e97b', '#38f9d7', '#fa709a', '#fee140'
         ];
 
+        // Plugin para mostrar valores no topo das barras
+        const valueOnTopPlugin = {
+            id: 'valueOnTop',
+            afterDatasetsDraw(chart) {
+                const {ctx} = chart;
+                ctx.save();
+                chart.data.datasets.forEach((dataset, i) => {
+                    chart.getDatasetMeta(i).data.forEach((bar, index) => {
+                        const value = dataset.data[index];
+                        ctx.font = 'bold 14px Segoe UI, Tahoma, Geneva, Verdana, sans-serif';
+                        ctx.fillStyle = '#333';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText(Number(value).toFixed(3), bar.x, bar.y - 6);
+                    });
+                });
+                ctx.restore();
+            }
+        };
+
         // Função para criar gráfico de barras
-        function createBarChart(canvasId, data, label, backgroundColor = colors[0]) {
+        function createBarChart(canvasId, data, label, backgroundColor = colors[0], showValuesOnTop = false) {
             console.log('=== CRIANDO GRÁFICO ===');
             console.log('Canvas ID:', canvasId);
             console.log('Dados recebidos:', data);
@@ -235,7 +255,7 @@
                 window.charts = {};
             }
             
-            const chart = new Chart(ctx, {
+            const chartConfig = {
                 type: 'bar',
                 data: {
                     labels: data.labels,
@@ -270,8 +290,13 @@
                             bottom: 10
                         }
                     }
-                }
-            });
+                },
+                plugins: []
+            };
+            if (showValuesOnTop) {
+                chartConfig.plugins.push(valueOnTopPlugin);
+            }
+            const chart = new Chart(ctx, chartConfig);
             
             // Armazenar referência do gráfico
             window.charts[canvasId] = chart;
@@ -390,7 +415,11 @@
                 
                 // Atualizar estatísticas
                 document.getElementById('total-schools').textContent = schools.length;
-                const avgGrade = schools.reduce((sum, s) => sum + s.average_grade, 0) / schools.length;
+                
+                // Calcular a média geral correta (média ponderada por número de alunos)
+                const totalStudents = schools.reduce((sum, s) => sum + s.total_students, 0);
+                const weightedSum = schools.reduce((sum, s) => sum + (s.average_grade * s.total_students), 0);
+                const avgGrade = totalStudents > 0 ? weightedSum / totalStudents : 0;
                 document.getElementById('avg-grade').textContent = avgGrade.toFixed(1);
                 
             } catch (error) {
@@ -457,7 +486,7 @@
                 const labels = cities.map(c => c.city);
                 const values = cities.map(c => c.average_grade);
                 
-                createBarChart('citiesChart', { labels, values }, 'Média por Cidade', colors[2]);
+                createBarChart('citiesChart', { labels, values }, 'Média por Cidade', colors[2], true);
                 
             } catch (error) {
                 console.error('Erro ao carregar dados das cidades:', error);

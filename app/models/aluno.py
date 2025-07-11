@@ -23,5 +23,6 @@ class Aluno(db.Model):
             'data_mat': self.data_mat.isoformat() if self.data_mat else None,
             'turno': self.turno,
             'serie': self.serie,
-            'id_escola': self.id_escola
+            'id_escola': self.id_escola,
+            'escola_nome': self.escola.nome if self.escola else None
         } 

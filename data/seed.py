@@ -3,7 +3,7 @@ import psycopg2
 from psycopg2.extras import execute_values
 
 # Load CSV with UTF-8 encoding
-df = pd.read_csv("data/dados_simulados_educacao_teste_2.csv", encoding='utf-8')
+df = pd.read_csv("data/dados_simulados_perturbado_extremo.csv", encoding='utf-8')
 # Clean up and normalize data
 df["Nota 1º Tri"] = df["Nota 1º Tri"].str.replace(",", ".").astype(float)
 df["Nota 2º Tri"] = df["Nota 2º Tri"].str.replace(",", ".").astype(float)
@@ -78,13 +78,10 @@ for _, row in df.iterrows():
     # --- Aluno ---
     aluno_key = (row["Aluno"], row["Turno"], escola_id)
 
-    if aluno_key not in aluno_appearance_tracker:
-        aluno_appearance_tracker[aluno_key] = 0
-    else:
-        aluno_appearance_tracker[aluno_key] += 1
+    
 
-    year = 2018 + aluno_appearance_tracker[aluno_key]
-    data_mat = f"{year}-02-01"
+    year = row["Ano"] 
+    data_mat = f"{year}-01-01"
 
     if row["matricula_aluno"] not in aluno_ids:
         # First try to find existing aluno
